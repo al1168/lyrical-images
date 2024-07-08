@@ -1,37 +1,50 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
 declare global {
   interface Window {
-    onSpotifyWebPlaybackSDKReady : any;
-    Spotify :any;
+    onSpotifyWebPlaybackSDKReady: () => void;
+    Spotify: any;
   }
 }
+
 export default function Home() {
+  const [player, setPlayer] = useState<any>(null);
+  const [isPaused, setPaused] = useState(false);
+
   useEffect(() => {
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = "https://sdk.scdn.co/spotify-player.js";
     script.async = true;
 
     script.onload = () => {
       window.onSpotifyWebPlaybackSDKReady = () => {
-        const token = 'BQCd0Pj03XocBbTYF4C689_ozJeJHUoN7aD-BZ8obLr1alkDqLU_zDrDuBULvVsgpPmfHx7yfwp5pHTgg6zLNGWAc1aqQ9CmnsJxzGc0fwPXb7uCpmaxiKwFT-CQYfMvSEiv1ibhymYUZ1TORo2x1l4nvoSvC7ECDJWjFxGsEmCbLArjwaEhwb5CGNDBLjodQMcjzLuEHqUtfPN_YGCUf_AW'; 
-        const player = new Spotify.Player({
-          name: 'Web Playback SDK Quick Start Player',
+        const token = 'replace with ur owntoken';
+        const player = new window.Spotify.Player({
+          name: 'Web Playback SDK',
           getOAuthToken: cb => { cb(token); },
           volume: 0.5
         });
 
-        // Ready
+        setPlayer(player);
+        console.log(player); // Log the player object to see its contents
+
         player.addListener('ready', ({ device_id }) => {
           console.log('Ready with Device ID', device_id);
         });
 
-        // Not Ready
         player.addListener('not_ready', ({ device_id }) => {
           console.log('Device ID has gone offline', device_id);
         });
 
-        // Connect to the player!
+        player.addListener('player_state_changed', (state) => {
+          if (!state) {
+            return;
+          }
+
+          setPaused(state.paused);
+        });
+
         player.connect();
       };
     };
@@ -43,9 +56,18 @@ export default function Home() {
     };
   }, []);
 
+  const togglePlay = () => {
+    if (player) {
+      player.togglePlay();
+    }
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <h1>Spotify Web Playback SDK</h1>
+      <button className="btn-spotify" onClick={togglePlay}>
+        {isPaused ? "PLAY" : "PAUSE"}
+      </button>
     </main>
   );
 }
